@@ -1,0 +1,28 @@
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  name: pipelinerun-s2i-php
+spec:
+  # Use service account with git and image repo credentials
+  serviceAccountName: pipeline
+  pipelineRef:
+    name: pipeline-s2i-php
+  params:
+  - name: IMAGE
+    value: dune.registry.arrakis.kc:8443/tekton/scaling-version:1.0
+  - name: repo-url
+    value: https://github.com/achelouah/scaling-version-priv.git
+  - name: repo-revision
+    value: main
+  workspaces:
+  - name: shared-workspace
+    volumeClaimTemplate:
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi
+  - name: registry-credential
+    secret:         
+      secretName: secret-workspace-registry

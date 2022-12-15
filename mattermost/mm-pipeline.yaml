@@ -1,0 +1,80 @@
+---
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: mm-pipeline
+spec:
+  description: | 
+    Pipeline for sending file to Mattermost
+  workspaces:
+  - name: shared-data
+  params:
+    - name: IMAGE
+      description: Image to use for executing the current task
+      type: string
+      default: artifactory.services.studio.airbushelicopters.com/ah-tasks-builder/ubi8/ubi:latest
+    - name: MATTERMOST_APPNAME
+      description: Mattermost Team Application Name
+      type: string
+    - name: MATTERMOST_SERVICE
+      description: Mattermost Channel Service Name
+      type: string
+    - name: MATTERMOST_FILENAME
+      description: Full path to file name to be Uploaded to Mattermost 
+      type: string
+      default: "logs.txt"
+    - name: MATTERMOST_CHANNEL_MESSAGE
+      description: Message string send to Mattermost
+      type: string
+      default: "Default message"
+    - name: MATTERMOST_BASEURL
+      description: Mattermost Base URL 
+      type: string
+      default: https://mattermost.services-sdx.studio.airbushelicopters.com/api/v4
+    - name: MATTERMOST_SENDFILE
+      description: true if you want to send a file, false otherwise
+      default: false
+      type: string
+    - name: MATTERMOST_SECRET
+      description: Name of the secret of Mattermost Credentials
+      default: "mm-secret-token"
+      type: string
+
+  tasks:
+  - name: gen-log-file
+    taskRef:
+      name: mm-gen-logfile
+    workspaces:
+      - name: logdir
+        workspace: shared-data
+    params:
+      - name: IMAGE
+        value: $(params.IMAGE)
+      - name: MATTERMOST_FILENAME
+        value: $(params.MATTERMOST_FILENAME)
+
+  - name: send-mattermost-message
+    taskRef:
+      name: mm-notification
+    runAfter:
+      - gen-log-file
+    workspaces:
+      - name: mattermost-file
+        workspace: shared-data
+    params:
+      - name: IMAGE
+        value: $(params.IMAGE)
+      - name: MATTERMOST_APPNAME
+        value: $(params.MATTERMOST_APPNAME)
+      - name: MATTERMOST_SERVICE
+        value: $(params.MATTERMOST_SERVICE)
+      - name: MATTERMOST_FILENAME
+        value: $(params.MATTERMOST_FILENAME)
+      - name: MATTERMOST_CHANNEL_MESSAGE
+        value: $(params.MATTERMOST_CHANNEL_MESSAGE)
+      - name: MATTERMOST_BASEURL
+        value: $(params.MATTERMOST_BASEURL)
+      - name: MATTERMOST_SENDFILE
+        value: $(params.MATTERMOST_SENDFILE)
+      - name: MATTERMOST_SECRET
+        value: $(params.MATTERMOST_SECRET)

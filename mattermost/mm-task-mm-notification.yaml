@@ -1,0 +1,67 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: mm-notification
+spec:
+  description: Task to send a message and/or file to mattermost.
+  workspaces:
+    - name: mattermost-file
+      description: Workspace where the File to be uploaded to MM is located
+  params:
+    - name: IMAGE
+      description: Image to use for executing the current task
+      type: string
+      default: artifactory.services.studio.airbushelicopters.com/ah-tasks-builder/ubi8/ubi:latest
+    - name: MATTERMOST_APPNAME
+      description: Mattermost Team Application Name
+      type: string
+    - name: MATTERMOST_SERVICE
+      description: Mattermost Channel Service Name
+      type: string
+    - name: MATTERMOST_FILENAME
+      description: Full path to file name to be Uploaded to Mattermost 
+      type: string
+      default: "logs.txt"
+    - name: MATTERMOST_CHANNEL_MESSAGE
+      description: Message string send to Mattermost
+      type: string
+      default: "Default message"
+    - name: MATTERMOST_BASEURL
+      description: Mattermost Base URL 
+      type: string
+      default: https://mattermost.services-sdx.studio.airbushelicopters.com/api/v4
+    - name: MATTERMOST_SENDFILE
+      description: true if you want to send a file, false otherwise
+      default: false
+      type: string
+    - name: MATTERMOST_SECRET
+      description: Name of the secret of Mattermost Credentials
+      default: "mm-secret-token"
+      type: string      
+  results:
+    - description: ''
+      name: output
+  steps:
+    - image: $(params.IMAGE)
+      name: mattermost-notification
+      env:
+        - name: MATTERMOST_CREDS_PSW
+          valueFrom: 
+            secretKeyRef:
+              name: $(params.MATTERMOST_SECRET)
+              key: token
+      script: |
+        set -x
+        echo "[INFO] Start sh always"
+        MATTERMOST_TEAM_ID=$( curl -s -H "Authorization: Bearer ${MATTERMOST_CREDS_PSW}" $(params.MATTERMOST_BASEURL)/teams | jq -r ".[] | select(.name==\"$(params.MATTERMOST_APPNAME)\") | .id" )
+        # Récupération du channel id où envoyer les logs
+        MATTERMOST_CHANNEL_ID=$( curl -s -XGET -H "Authorization:Bearer ${MATTERMOST_CREDS_PSW}" $(params.MATTERMOST_BASEURL)/teams/${MATTERMOST_TEAM_ID}/channels/name/$(params.MATTERMOST_SERVICE) | jq -r '.id' )
+             
+        # Création du fichier de logs dans Mattermost
+        if [ "$(params.MATTERMOST_SENDFILE)" = "true" ]; then
+            FILE_ID=$(curl -s -H "Authorization:Bearer ${MATTERMOST_CREDS_PSW}" -F "files=@$(workspaces.mattermost-file.path)/$(params.MATTERMOST_FILENAME)" -F "channel_id=${MATTERMOST_CHANNEL_ID}" "$(params.MATTERMOST_BASEURL)/files" | jq -r '.file_infos[].id')
+            DATA="{\"channel_id\":\"${MATTERMOST_CHANNEL_ID}\", \"message\":\"$(params.MATTERMOST_CHANNEL_MESSAGE)\", \"file_ids\":[\"${FILE_ID}\"]}"
+            # Envoie du fichier de logs dans Mattermost en tant que message
+            curl -s -H "Authorization:Bearer ${MATTERMOST_CREDS_PSW}" -d "$DATA" "$(params.MATTERMOST_BASEURL)/posts"
+        fi   
+        echo "[INFO] End sh always"

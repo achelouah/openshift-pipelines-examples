@@ -1,0 +1,50 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: helloworld-results
+  description: A simple task to show results usage
+spec:
+  params:
+    - name: MESSAGE
+      description: Message to display
+      type: string
+      default: "Hello World from OpenShift Pipelines ..."
+    - name: LOGFILE
+      description: The logfile (without the path) where to write the message to
+      type: string
+      default: message.log
+    - name: IMAGE
+      description: Location of the bash image
+      type: string
+      default: "registry.access.redhat.com/ubi8/ubi-minimal:8.7-923"
+  results:
+    - name: MESSAGE_DIGEST
+      description: Log file sha256 digest
+  steps:
+    - name: gen-message
+      image: $(params.IMAGE)
+      script: |
+        #!/usr/bin/env sh
+        echo "Generating logfile ..."
+        echo "$(params.MESSAGE)" > /var/myvolume/$(params.LOGFILE)
+        sha256sum /var/myvolume/$(params.LOGFILE) | awk '{print $1}' \
+            > $(results.MESSAGE_DIGEST.path)
+      volumeMounts:
+        - name: myvolume
+          mountPath: /var/myvolume
+    - name: display-message
+      image: $(params.IMAGE)
+      script: |
+        #!/usr/bin/env sh
+        cat "/var/myvolume/$(params.LOGFILE)"
+      volumeMounts:
+        - name: myvolume
+          mountPath: /var/myvolume
+    - name: display-digest
+      image: $(params.IMAGE)
+      script: |
+        #!/usr/bin/env sh
+        cat "$(results.MESSAGE_DIGEST.path)"
+  volumes:
+    - name: myvolume
+      emptyDir: {}

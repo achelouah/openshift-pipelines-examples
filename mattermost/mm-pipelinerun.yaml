@@ -1,0 +1,36 @@
+---
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  name: pipelinerun-testmattermost
+  namespace: mattermost
+spec:
+  serviceAccountName: pipeline
+  pipelineRef:
+    name: test-mattermost
+  workspaces:
+    - name: shared-data
+      volumeClaimTemplate:
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 1Mi
+  params:
+    - name: IMAGE
+      value: "dune.registry.arrakis.kc:8443/ach/ubi8-jq:20220805"
+    - name: MATTERMOST_APPNAME
+      value: "redhat"
+    - name: MATTERMOST_SERVICE
+      value: "airbus"
+    - name: MATTERMOST_FILENAME
+      value: "logs.txt"
+    - name: MATTERMOST_CHANNEL_MESSAGE
+      value: "test-migration"
+    - name: MATTERMOST_BASEURL
+      value: "http://mattermost.apps.example.com:8065/api/v4"
+    - name: MATTERMOST_SENDFILE
+      value: "true"
+    - name: MATTERMOST_SECRET
+      value: "mattermost-secret"

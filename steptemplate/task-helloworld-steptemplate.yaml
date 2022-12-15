@@ -1,0 +1,40 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: helloworld-steptemplate
+  description: A simple task to show stepTemplate usage
+spec:
+  params:
+    - name: IMAGE
+      description: Location of the bash image
+      type: string
+      default: "registry.access.redhat.com/ubi8/ubi-minimal:8.7-923"
+    - name: HTTP_PROXY
+      description: http proxy secret
+      type: string
+      default: "http-proxy"
+  stepTemplate:
+    env:
+      - name: "HTTP_PROXY"
+        valueFrom:
+          secretKeyRef:
+            name: $(params.HTTP_PROXY)
+            key: http_proxy
+            optional: false
+      - name: "NO_PROXY"
+        valueFrom:
+          secretKeyRef:
+            name: $(params.HTTP_PROXY)
+            key: no_proxy
+            optional: false
+  steps:
+    - name: display-http-proxy
+      image: $(params.IMAGE)
+      script: |
+        #!/usr/bin/env sh
+        echo "HTTP_PROXY: ${HTTP_PROXY}"
+    - name: display-no-proxy
+      image: $(params.IMAGE)
+      script: |
+        #!/usr/bin/env sh
+        echo "NO_PROXY: ${NO_PROXY}"

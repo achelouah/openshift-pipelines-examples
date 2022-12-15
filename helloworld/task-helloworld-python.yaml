@@ -1,0 +1,12 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: helloworld-python
+  description: A simple task displaying hello world
+spec:
+  steps:
+    - name: display-helloworld
+      image: registry.access.redhat.com/ubi9/python-39:1-90
+      script: |
+        #!/usr/bin/env python3
+        print('Hello World from OpenShift Pipelines ...')

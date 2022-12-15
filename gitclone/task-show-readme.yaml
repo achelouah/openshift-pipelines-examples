@@ -1,0 +1,20 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: show-readme
+  description: Read and display README file.
+spec:
+  workspaces:
+  - name: source
+  steps:
+  - name: read
+    image: registry.access.redhat.com/ubi8/ubi-minimal:8.7-923
+    workingDir: "$(workspaces.source.path)"
+    script: | 
+      #!/usr/bin/env sh
+      echo "Workspace: $(workspaces.source.path)"
+      if [ -f "README.md" ]; then
+         cat README.md
+      else
+         echo "README.md: No such file or directory ..."
+      fi

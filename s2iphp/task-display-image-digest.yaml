@@ -1,0 +1,15 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: display-image-digest
+  description: A simple task to display image digest
+spec:
+  params:
+    - name: IMAGE_DIGEST
+      description: Image digest
+  steps:
+    - name: display-image-digest
+      image: registry.access.redhat.com/ubi8/ubi-minimal:8.7-923
+      script: |
+        #!/usr/bin/env sh
+        echo "IMAGE DIGEST: $(params.IMAGE_DIGEST)" 

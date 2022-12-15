@@ -1,0 +1,41 @@
+# workspaces:
+# - name: pvc-workspace
+#   persistentVolumeClaim:
+#     claimName: my-pvc
+# 
+# - name: emptydir-workspace
+#   emptyDir: {}
+# 
+apiVersion: tekton.dev/v1beta1
+kind: TaskRun
+metadata:
+  name: run-workspaces-helloworld
+spec:
+  taskRef:
+    name: workspaces-helloworld
+  workspaces:
+  - name: ws-message
+    volumeClaimTemplate:
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 10Mi
+  - name: ws-secret
+    secret:
+      secretName: workspace-secret
+  - name: ws-configmap
+    configMap:
+      name: workspace-configmap
+  params:
+  - name: MESSAGE                                                                                                                                                                                      
+    value: "Hello World from OpenShift Pipelines ..."
+  - name: LOGFILE
+    value: message.log
+  - name: SECRETFILE
+    value: password.txt
+  - name: CONFIGMAPFILE
+    value: logrotate.conf
+  - name: IMAGE
+    value: "registry.access.redhat.com/ubi8/ubi-minimal:8.7-923"

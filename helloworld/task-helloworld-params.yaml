@@ -1,0 +1,21 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: helloworld
+  description: A simple task displaying hello world
+spec:
+  params:
+    - name: MESSAGE
+      description: Message to display
+      type: string
+      default: "Hello World from OpenShift Pipelines ..."
+    - name: IMAGE
+      description: Location of the bash image
+      type: string
+      default: "registry.access.redhat.com/ubi8/ubi-minimal:8.7-923"
+  steps:
+    - name: display-helloworld
+      image: $(params.IMAGE)
+      script: |
+        #!/usr/bin/env sh
+        echo "$(params.MESSAGE)"

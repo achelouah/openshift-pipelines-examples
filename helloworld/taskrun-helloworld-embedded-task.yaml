@@ -1,0 +1,13 @@
+apiVersion: tekton.dev/v1beta1
+kind: TaskRun
+metadata:
+  name: helloworld-run
+spec:
+  resources: {}
+  taskSpec:
+    steps:
+      - name: display-helloworld
+        image: registry.access.redhat.com/ubi8/ubi-minimal:8.7-923
+        script: |
+          #!/usr/bin/env sh
+          echo "Hello World from OpenShift Pipelines ..."

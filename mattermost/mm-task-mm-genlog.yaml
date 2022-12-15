@@ -1,0 +1,35 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: mm-gen-logfile
+spec:
+  description: This task create a log file for sending to mattermost
+  workspaces:
+    - name: logdir
+      description: Workspace for storing the File to be uploaded in Mattermost
+  params:
+    - name: IMAGE
+      description: Image to use for executing the current task
+      type: string
+      default: "dune.registry.arrakis.kc:8443/ach/ubi8-jq:20220805"
+    - name: MATTERMOST_FILENAME
+      description: Full path to file name to be Uploaded to Mattermost 
+      type: string
+      default: "logs.txt"
+  steps:
+    - name: display-log-filename
+      image: $(params.IMAGE)
+      script: |
+        echo "Mattermost Log File: $(params.MATTERMOST_FILENAME)"
+ 
+    - name: gen-log-file
+      image: $(params.IMAGE)
+      workingDir: "$(workspaces.logdir.path)"
+      script: |
+        echo "Hello World!" > $(params.MATTERMOST_FILENAME)
+ 
+    - name: cat-log-filename
+      image: $(params.IMAGE)
+      workingDir: "$(workspaces.logdir.path)"
+      script: |
+        cat $(params.MATTERMOST_FILENAME)

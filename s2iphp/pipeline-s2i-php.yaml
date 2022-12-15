@@ -1,0 +1,64 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: pipeline-s2i-php
+spec:
+  params:
+    - name: repo-url
+      description: The git repo URL to clone from
+      type: string
+    - name: repo-revision
+      type: string
+      description: Revision to checkout
+      default: main
+    - name: IMAGE
+      description: Location of the repo where image has to be pushed
+      type: string
+      default: https://github.com/achelouah/scaling-version-priv.git
+    - name: TLSVERIFY
+      description: Verify the TLS on the registry endpoint
+      default: "false"
+  workspaces:
+    - name: shared-workspace
+    - name: registry-credential
+  tasks:
+    - name: fetch-repository
+      taskRef:
+        name: git-clone
+        kind: ClusterTask
+      workspaces:
+        - name: output
+          workspace: shared-workspace
+      params:
+        - name: url
+          value: $(params.repo-url)
+        - name: revision
+          value: $(params.repo-revision)
+        - name: subdirectory
+          value: ""
+        - name: deleteExisting
+          value: "true"
+    - name: s2i
+      taskRef:
+        name: s2i-php
+        kind: ClusterTask
+      runAfter:
+        - fetch-repository
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+        - name: dockerconfig
+          workspace: registry-credential
+      params:
+        - name: IMAGE
+          value: $(params.IMAGE)
+        - name: TLSVERIFY
+          value: $(params.TLSVERIFY)
+    - name: image-digest
+      runAfter:
+        - s2i
+      taskRef:
+        name: display-image-digest
+      params:
+        - name: IMAGE_DIGEST
+          value: "$(tasks.s2i.results.IMAGE_DIGEST)"

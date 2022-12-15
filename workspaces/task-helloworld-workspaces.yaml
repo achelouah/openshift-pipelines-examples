@@ -1,0 +1,69 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: workspaces-helloworld
+  description: A simple task to show workspaces usage
+spec:
+  workspaces:
+    - name: ws-message
+      description: The folder where we write the message to
+    - name: ws-secret
+      description: The folder where we read a secret
+    - name: ws-configmap
+      description: The folder where we read a configmap
+  params:
+    - name: MESSAGE
+      description: Message to display
+      type: string
+      default: "Hello World from OpenShift Pipelines ..."
+    - name: LOGFILE
+      description: The logfile (without the path) where to write the message to
+      type: string
+      default: message.log
+    - name: SECRETFILE
+      description: The secret file (without the path)
+      type: string
+      default: password.txt
+    - name: CONFIGMAPFILE
+      description: The configmap file (without the path)
+      type: string
+      default: logrotate.conf
+    - name: IMAGE
+      description: Location of the bash image
+      type: string
+      default: "registry.access.redhat.com/ubi8/ubi-minimal:8.7-923"
+  steps:
+    - name: gen-message
+      image: $(params.IMAGE)
+      script: |
+        #!/usr/bin/env sh
+        echo "$(params.MESSAGE)" > $(workspaces.ws-message.path)/$(params.LOGFILE)
+    - name: display-message
+      image: $(params.IMAGE)
+      script: |
+        #!/usr/bin/env sh
+        if [ -f "$(workspaces.ws-message.path)/$(params.LOGFILE)" ]; then
+          cat "$(workspaces.ws-message.path)/$(params.LOGFILE)"
+        else
+          echo "$(workspaces.ws-message.path)/$(params.LOGFILE): No such file or directory ..."
+        fi
+
+    - name: display-secret
+      image: $(params.IMAGE)
+      script: |
+        #!/usr/bin/env sh
+        if [ -f "$(workspaces.ws-secret.path)/$(params.SECRETFILE)" ]; then
+          cat "$(workspaces.ws-secret.path)/$(params.SECRETFILE)"
+        else
+          echo "$(workspaces.ws-secret.path)/$(params.SECRETFILE): No such file or directory ..."
+        fi
+
+    - name: display-configmap
+      image: $(params.IMAGE)
+      script: |
+        #!/usr/bin/env sh
+        if [ -f "$(workspaces.ws-configmap.path)/$(params.CONFIGMAPFILE)" ]; then
+          cat "$(workspaces.ws-configmap.path)/$(params.CONFIGMAPFILE)"
+        else
+          echo "$(workspaces.ws-configmap.path)/$(params.CONFIGMAPFILE): No such file or directory ..."
+        fi
