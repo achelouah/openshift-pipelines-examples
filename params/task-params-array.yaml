@@ -1,0 +1,28 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: task-params-array
+  description: A task for using array params
+spec:
+  params:
+    - name: SCRIPT
+      description: Script name to run
+      type: string
+      default: "myscript"
+    - name: ARGS
+      description: Script Arguments
+      type: array
+      default: ["--enable-tls","-l INFO"]
+    - name: IMAGE
+      description: Location of the bash image
+      type: string
+      default: "registry.access.redhat.com/ubi8/ubi-minimal:8.7-923"
+  steps:
+    - name: run-script
+      image: "$(params.IMAGE)"
+      args: ["$(params.ARGS[*])"]
+      script: |
+        #!/usr/bin/env sh
+        ARGS="$@"
+        printf "Script: %s\n" "$(params.SCRIPT)"
+        printf "Arguments: %s\n" "${ARGS}"

@@ -1,0 +1,30 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: pipeline-params-array
+  description: A pipeline for using array params
+spec:
+  params:
+    - name: SCRIPT
+      description: Script name to run
+      type: string
+      default: "myscript"
+    - name: ARGS
+      description: Script Arguments
+      type: array
+      default: ["--enable-tls","-l INFO"]
+    - name: IMAGE
+      description: Location of the bash image
+      type: string
+      default: "registry.access.redhat.com/ubi8/ubi-minimal:8.7-923"
+  tasks:
+    - name: run-script
+      taskRef:
+        name: task-params-array
+      params:
+        - name: SCRIPT
+          value: "$(params.SCRIPT)"
+        - name: ARGS
+          value: ["$(params.ARGS)"]
+        - name: IMAGE
+          value: "$(params.IMAGE)"
