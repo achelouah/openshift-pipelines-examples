@@ -12,7 +12,9 @@ spec:
     - name: ARGS
       description: Script Arguments
       type: array
-      default: ["--enable-tls","-l INFO"]
+      default:
+        - "--enable-tls"
+        - "-l INFO"
     - name: IMAGE
       description: Location of the bash image
       type: string
